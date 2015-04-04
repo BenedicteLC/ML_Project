@@ -1,0 +1,3 @@
+-BasicTask class is what gives the state and reward to the agent and grabs the next action.
+-integrateObservation method updates the env state and is found in BasicMarioAIAgent.
+-See SimulatorOptions class for options.
