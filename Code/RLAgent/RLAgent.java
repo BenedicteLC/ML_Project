@@ -8,12 +8,15 @@ import ch.idsia.benchmark.mario.environments.Environment;
 public class RLAgent extends BasicMarioAIAgent implements Agent{
 	
 	int trueJumpCounter = 0;
-	int trueSpeedCounter = 0;
+	int trueSpeedCounter = 0;	
+
+    State currentState;
 	
 	public RLAgent()
 	{
 	    super("RLAgent");
 	    reset();
+	    this.currentState = new State();
 	}
 	
 	public void reset()
@@ -21,6 +24,12 @@ public class RLAgent extends BasicMarioAIAgent implements Agent{
 	    action = new boolean[Environment.numberOfKeys];	   
 	    trueJumpCounter = 0;
 	    trueSpeedCounter = 0;
+	}
+	
+	public void integrateObservation(Environment environment){
+		super.integrateObservation(environment);
+		// Update the state.
+        currentState.update(environment);
 	}
 	
 	// We won't need this once we have RL.
