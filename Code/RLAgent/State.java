@@ -13,7 +13,7 @@ public class State {
 	private int marioStatus;
 	private int stepKillsByFire, stepKillsByStomp, totalKillsByFire, totalKillsByStomp;
 	private int[] monsters; // 19x19 flattened binary grid.
-	private int[] obstacles; // 4x5 flattened binary grid.		
+	private int[] obstacles; // 6x5 flattened binary grid.		
 	private float currentMarioXPosition, previousMarioXPosition;	
 	
 	private Environment environment;
@@ -23,8 +23,8 @@ public class State {
 
 	public State() {
 		this.monsters = new int[19*19];
-		this.obstacles = new int[4*5];
-		this.stateArray = new int[4 + 19*19 + 4*5];
+		this.obstacles = new int[6*5];
+		this.stateArray = new int[4 + 19*19 + 6*5];
 		this.currentMarioXPosition = 0;
 		this.totalKillsByFire = 0;
 		this.totalKillsByStomp = 0;
@@ -43,8 +43,7 @@ public class State {
 		
 		// Update Mario's float position.
 		this.previousMarioXPosition = this.currentMarioXPosition;
-		this.currentMarioXPosition = environment.getMarioFloatPos()[0];
-		
+		this.currentMarioXPosition = environment.getMarioFloatPos()[0];		
 		// Get Marios's current status (running, dead, etc).
 		this.marioStatus = this.environment.getMarioStatus();
 		
@@ -85,7 +84,7 @@ public class State {
 		currentTile = 0;
 		int marioX = 9;
 		int marioY = 9;
-		for(int i = marioX - 2; i <= marioX + 1; i++){
+		for(int i = marioX - 2; i <= marioX + 3; i++){
 			for (int j = marioY - 2; j <= marioY + 2; j++){
 				if(this.containsObstacle(scene[i][j], i)){
 					this.obstacles[currentTile] = 1;
