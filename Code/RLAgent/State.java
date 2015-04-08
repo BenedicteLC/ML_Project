@@ -1,6 +1,7 @@
 package RLAgent;
 
 import ch.idsia.benchmark.mario.environments.Environment;
+import ch.idsia.benchmark.mario.engine.sprites.Mario;
 import ch.idsia.benchmark.mario.engine.sprites.Sprite; // Monsters, etc.
 import ch.idsia.benchmark.mario.engine.GeneralizerLevelScene; // Obstacles.
 
@@ -9,8 +10,11 @@ public class State {
 	// Variables contained within a state.
 	private int isMarioBig, isMarioFire;
 	private int isGrounded, canJump;
+	private int marioStatus;
+	private int stepKillsByFire, stepKillsByStomp, totalKillsByFire, totalKillsByStomp;
 	private int[] monsters; // 19x19 flattened binary grid.
-	private int[] obstacles; // 4x5 flattened binary grid.	
+	private int[] obstacles; // 4x5 flattened binary grid.		
+	private float currentMarioXPosition, previousMarioXPosition;	
 	
 	private Environment environment;
 	private byte[][] scene; // Contains monsters and obstacles.
@@ -21,6 +25,9 @@ public class State {
 		this.monsters = new int[19*19];
 		this.obstacles = new int[4*5];
 		this.stateArray = new int[4 + 19*19 + 4*5];
+		this.currentMarioXPosition = 0;
+		this.totalKillsByFire = 0;
+		this.totalKillsByStomp = 0;
 	}
 		
 	// Update the state variables. 
@@ -33,6 +40,19 @@ public class State {
 		///////////////////
 		// Update variables.
 		///////////////////
+		
+		// Update Mario's float position.
+		this.previousMarioXPosition = this.currentMarioXPosition;
+		this.currentMarioXPosition = environment.getMarioFloatPos()[0];
+		
+		// Get Marios's current status (running, dead, etc).
+		this.marioStatus = this.environment.getMarioStatus();
+		
+		// Get the amount of kills in this tick.
+		this.stepKillsByFire = this.environment.getKillsByFire() - this.totalKillsByFire;
+		this.stepKillsByStomp = this.environment.getKillsByStomp() - this.stepKillsByStomp;
+		this.totalKillsByFire = this.environment.getKillsByFire();
+		this.totalKillsByStomp = this.environment.getKillsByStomp();
 		
 		// Get Mario's mode (small/big, fire).
 		// Mario can be both big and fire at the same time.
@@ -135,6 +155,28 @@ public class State {
 		}
 		
 		return containsObstacle;
+	}
+	
+	public float getCurrentMarioXPosition(){
+		return this.currentMarioXPosition;
+	}
+	
+	public float getPreviousMarioXPosition(){
+		return this.previousMarioXPosition;
+	}
+	
+	public int getMarioStatus(){
+		return this.marioStatus;
+	}
+	
+	// Number of kills in this tick.
+	public int getKillsByFire(){
+		return this.stepKillsByFire;
+	}
+	
+	// Number of kills in this tick.
+	public int getKillsByStomp(){
+		return this.stepKillsByStomp;
 	}
 }
 
