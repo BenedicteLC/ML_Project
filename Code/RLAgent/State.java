@@ -20,7 +20,7 @@ public class State {
 	public State() {
 		this.monsters = new int[19*19];
 		this.obstacles = new int[4*5];
-		this.stateArray = new int[5 + 19*19 + 4*5];
+		this.stateArray = new int[4 + 19*19 + 4*5];
 	}
 		
 	// Update the state variables. 
@@ -34,7 +34,7 @@ public class State {
 		// Update variables.
 		///////////////////
 		
-		// Get Mario's mode (small, big, fire).
+		// Get Mario's mode (small/big, fire).
 		// Mario can be both big and fire at the same time.
 		int marioMode = environment.getMarioMode();
 		this.isMarioBig = marioMode == 0 ? 0 : 1;
@@ -43,16 +43,7 @@ public class State {
 		// 1 if Mario is grounded, 0 otherwise.
 		this.isGrounded = environment.isMarioOnGround() ? 1 : 0;
 		// 1 if Mario can jump, 0 otherwise.
-		this.canJump = environment.isMarioAbleToJump() || !environment.isMarioOnGround() ? 1 : 0;
-		
-		for(int i =0; i < this.scene.length; i++){
-			for(int j =0; j < this.scene[0].length; j++){
-				System.out.print(this.scene[i][j]+" ");
-			}
-			System.out.println();
-		}
-		System.out.println();
-		
+		this.canJump = environment.isMarioAbleToJump() || !environment.isMarioOnGround() ? 1 : 0;			
 		
 		// Fill the monster array.
 		int currentTile = 0;
@@ -74,8 +65,8 @@ public class State {
 		currentTile = 0;
 		int marioX = 9;
 		int marioY = 9;
-		for(int i = marioX - 2; i <= marioX + 2; i++){
-			for (int j = marioY - 2; j <= marioY + 1; j++){
+		for(int i = marioX - 2; i <= marioX + 1; i++){
+			for (int j = marioY - 2; j <= marioY + 2; j++){
 				if(this.containsObstacle(scene[i][j], i)){
 					this.obstacles[currentTile] = 1;
 				}
@@ -146,6 +137,16 @@ public class State {
 		return containsObstacle;
 	}
 }
+
+/*
+ * 
+		for(int i =0; i < this.scene.length; i++){
+			for(int j =0; j < this.scene[0].length; j++){
+				System.out.print(this.scene[i][j]+" ");
+			}
+			System.out.println();
+		}
+		System.out.println();*/
 
 
 
