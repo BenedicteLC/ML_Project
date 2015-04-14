@@ -11,36 +11,56 @@ import ch.idsia.benchmark.mario.environments.Environment;
 
 public class RLAgent2 extends BasicMarioAIAgent implements Agent{
 	
+	private static final Object NN = null;
 	int trueJumpCounter = 0;
 	int trueSpeedCounter = 0;
 	int round = 0;
-	float last_intermediate;
 	float reward;
 	Random rand = new Random();
 	boolean[][] all_actions = new boolean[13][6];
-	double epsilon = 0.25;//0.0001;//
-	double epsilon_min = 0.0001;
-	double linear_ep = 1500*15000; // linear decay of epsilon over # of moves
-	double alpha = 0.001; //0; learning rate
-	double dec = 0.995; // Reward decay
-	double lambda = 0.0; // eligibility traces
-	double epsilon_decay = epsilon - epsilon_min;
+	public double epsilon = 0.3;// 0.00001;//  
+	public double epsilon_min = 0.001; // 0.000001;// 0.01 
+	public double epsilon_decay = epsilon - epsilon_min;
+	public double alpha = 0.0005; // learning rate 0.0005
+	public double alpha_min = 0.00001;
+	public double alpha_decay = alpha-alpha_min;
+	double dec = 0.99; // Reward decay
+	double lambda = 0.0001;//0.8; // eligibility traces
+	double regL2 = 0.0000001; // regularization parameter 0.001
+	double linear_ep = 1500*1500;
+	double linear_ep1 = 1500*1500; // linear decay of epsilon over # of moves -> around 1000-1500 per game
 	double num_moves = 0;
+	double current_epsilon;
+	double current_alpha;
 	int number_of_features;
+	boolean reset_trace = false;
 	LinearReg LR;
+	//NN LR;
 	boolean FIRST_PART = true;
 	boolean isLevelFinished;
 	double q_A;
 	double the_error;
+	int previous_mario_mode = 2;
 	int the_action;
 	State currentState;
+	boolean testRun = false;
+	
+	
+	// *** should try normalizing reward
 	
 	public RLAgent2()
 	{
 	    super("RLAgent2");
+	    if (testRun){
+	    	epsilon = 0.000001;
+	    	epsilon_min = 0.000001;
+	    	alpha = 0;
+	    	alpha_min = 0;
+	    }
 	    reset();
-	    // First txt is write, second is read.
-	    LR = new LinearReg(number_of_features, 13, "isStuck.txt");
+	    LR = new LinearReg(number_of_features, 13, /*"out24.txt",*/ "Test4.txt");
+	    //LR = new LinearReg(number_of_features, 13, "out24.txt", "out23.txt");
+	    //LR = new NN(number_of_features, 13, 100, "newtest1.txt");
 	}
 	
 	public void reset()
@@ -71,6 +91,7 @@ public class RLAgent2 extends BasicMarioAIAgent implements Agent{
 	    trueSpeedCounter = 0;
 	    currentState = new State();
 	    number_of_features = currentState.integrate().length;
+	    if (num_moves>0) LR.print_sum();
 	}
 	
 	public int getMoveFromOutputs(double[] outputs){
@@ -86,31 +107,30 @@ public class RLAgent2 extends BasicMarioAIAgent implements Agent{
 	}
 	
 	public void giveIntermediateReward(float intermediateReward){
-		//reward = last_intermediate - intermediateReward;
 		
-		reward = 3*(this.currentState.getDeltaDistance());
-		
-		/*if(Math.abs(this.currentState.getCurrentMarioXPosition() 
-				- this.currentState.getPreviousMarioXPosition()) > 0.009){
-			;//reward += 5*this.currentState.getMarioMode();
-		}*/
+		float distance_reward = ((float) 2)*(this.currentState.getDeltaDistance());
+		reward = distance_reward;
 		
 		// Give a negative reward when Mario is stuck.
 		if(this.currentState.isStuck() == 1)
 		{
-			reward -= 10;
+			reward -= 40;
 		}
+		
+		float mode_reward = (this.currentState.getMarioMode() - previous_mario_mode);
+		if(Math.abs(mode_reward) <= 1) // This solves the death bug but mario won't get rewarded from small to fire.
+			reward += 700*mode_reward; 
+		previous_mario_mode = this.currentState.getMarioMode();
+			
+		float kill_reward = (this.currentState.getKillsByFire() + this.currentState.getKillsByStomp())*100;		
+		reward += kill_reward;
 		
 		if(this.currentState.getMarioStatus() == Mario.STATUS_DEAD){
-			reward = -100;
+			reward = -10000;
 		}
-		if(this.currentState.getMarioStatus() == Mario.STATUS_WIN){
-			reward += 100;
-		}
-		reward += this.currentState.getKillsByFire() + this.currentState.getKillsByStomp();
-		
-		//last_intermediate = intermediateReward;
-	}	
+		//reward -= 700*this.currentState.getCollisionCount();		
+	}
+	
 	
 	public double[] get_inputs(){
 		int[] stateInfo = currentState.integrate();
@@ -124,29 +144,31 @@ public class RLAgent2 extends BasicMarioAIAgent implements Agent{
 		currentState.update(environment);
 		this.isLevelFinished = environment.isLevelFinished();
 	}
+	
+	public void update_eps_and_alpha(){
+		current_epsilon = epsilon_min + (((linear_ep - num_moves)/linear_ep) * epsilon_decay); // calculate epsilon
+		current_epsilon = Math.max(epsilon_min, current_epsilon);
+		current_alpha = alpha_min +(((linear_ep1 - num_moves)/linear_ep1) * alpha_decay);
+		current_alpha = Math.max(alpha_min, current_alpha);
+		num_moves++;
+	}
 
 	
 	public boolean[] getAction()
-	{
-	    //if (DangerOfAny() && getReceptiveFieldCellValue(marioEgoRow, marioEgoCol + 1) != 1)  // a coin
-	    // THIS IS AN ONLINE LEARNING AGENT
+	{		
 		if (FIRST_PART){
-			//double[] inputs = {1, 0, 0, 1, 1, 1};
 			double[] inputs = get_inputs();
-			//System.out.println("-> "+ inputs.length);
-			// GET INPUT FEATURES
-	
-			double current_epsilon = epsilon_min + (((linear_ep - num_moves)/linear_ep) * epsilon_decay); // calculate epsilon
-			current_epsilon = Math.max(epsilon_min, current_epsilon);
-			num_moves++;
+			update_eps_and_alpha();
 			
-			double[] q_values = LR.get_output(inputs);
+			double[] q_values = LR.get_output(inputs, true);
 			
 			int action_num = 0;
 			if (rand.nextDouble() < current_epsilon){
 		    	action_num = rand.nextInt(all_actions.length);
+		    	reset_trace = true;
 		    } else {
 		    	action_num = getMoveFromOutputs(q_values);
+		    	reset_trace = false;
 		    }
 			
 			q_A = q_values[action_num];
@@ -158,24 +180,30 @@ public class RLAgent2 extends BasicMarioAIAgent implements Agent{
 			FIRST_PART = false;
 		    return action;
 		} else {
-			double[] inputs = get_inputs();
-			double[] q_values_prime = LR.get_output(inputs);
-			int action_num = getMoveFromOutputs(q_values_prime);
-			double q_A_prime = q_values_prime[action_num];
-			//System.out.println();
-			//for (double i : q_values_prime) System.out.printf("%.2f ", i);
-			//System.out.println();
-			//System.out.print(reward +" + " + (dec*q_A_prime) +  " = " + the_error*(-1) +"-> ");
-			if (isLevelFinished){
-				LR.reset_traces();
-				the_error += reward - 0.01;
-			} else {
-				the_error += reward + (dec*q_A_prime) - 0.01;
-				//System.out.println(the_error);
+			if(!testRun){
+				double[] inputs = get_inputs();
+				double[] q_values_prime = LR.get_output(inputs, false);
+				int action_num = getMoveFromOutputs(q_values_prime);
+				double q_A_prime = q_values_prime[action_num];
+				if (isLevelFinished){
+					the_error += reward;
+					//System.out.println(num_moves+" "+current_epsilon+" "+current_alpha+" "+the_error);
+					LR.reset_traces();
+				} else {
+					//if (num_moves%500 == 0)
+					//	System.out.print(the_error+" "+(reward + (dec*q_A_prime)) +" ");
+					the_error += reward + (dec*q_A_prime);
+					/*if (num_moves%500 == 0){
+						double a=0;
+						for (double i : inputs) a += i;
+						System.out.print(a+"<- ");
+						System.out.println(the_error);
+						LR.print_sum();
+					}*/
+				}
+				
+				LR.train(the_action, current_alpha, the_error, lambda, dec, regL2, reset_trace);
 			}
-			
-			LR.train(the_action, alpha, the_error, lambda, dec);
-			
 			FIRST_PART = true;
 			return action;
 		}
@@ -183,6 +211,11 @@ public class RLAgent2 extends BasicMarioAIAgent implements Agent{
 	
 	public boolean[] getAction(int action_num){
 		return all_actions[action_num].clone();
-	}		
+	}	
+	
+	@Override
+    protected Object clone() throws CloneNotSupportedException {
+        return super.clone();
+    }
 }
 
