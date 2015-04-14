@@ -27,7 +27,6 @@ public class Simulator2 {
 	    final MarioAIOptions marioAIOptions = new MarioAIOptions(args);
 	    final RLAgent2 agent = new RLAgent2();
 	    final RLBasicTask basicTask = new RLBasicTask(marioAIOptions);
-	    final Logger logger = new Logger();
 	    
 	    int seed = 0;
 	    int difficulty;
@@ -51,7 +50,7 @@ public class Simulator2 {
             
             // Log the current model results every 100 iterations.
             if(i % 100 == 0){            	
-            	testModel(marioAIOptions, basicTask, agent, logger);   
+            	testModel(marioAIOptions, basicTask, agent, i);   
             }
             
             
@@ -77,10 +76,14 @@ public class Simulator2 {
 
 	}	
 	
-	static void testModel(MarioAIOptions marioAIOptions, RLBasicTask basicTask, RLAgent2 agent, Logger logger){
+	static void testModel(MarioAIOptions marioAIOptions, RLBasicTask basicTask, RLAgent2 agent, int currentIter){	 
+	    
 		int seed = 0;
 	    int difficulty;
+	    int numberTestIters = 100;
 	    Random rand = new Random();
+	    
+	    final Logger logger = new Logger(currentIter);
 	    
 	    // This is ugly, but creating a clone of agent was a mess.
 	    double backupAlpha = agent.alpha;
@@ -98,7 +101,7 @@ public class Simulator2 {
     	agent.epsilon_min = 0;
     	agent.epsilon_decay = 0;
     	
-    	for (int i = 0; i < 100; ++i)
+    	for (int i = 0; i < numberTestIters; ++i)
  	    {	
  	    	 difficulty = rand.nextInt(1);        	        
  	        
@@ -113,6 +116,8 @@ public class Simulator2 {
              Environment environment = basicTask.getEnvironment();
              logger.log(environment);
  	    }
+    	
+    	logger.writeToFile();
     	
     	// Restore the parameters.
     	agent.alpha = backupAlpha;
