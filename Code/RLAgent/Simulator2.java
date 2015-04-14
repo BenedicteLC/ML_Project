@@ -27,7 +27,7 @@ public class Simulator2 {
 	    final MarioAIOptions marioAIOptions = new MarioAIOptions(args);
 	    final RLAgent2 agent = new RLAgent2();
 	    final RLBasicTask basicTask = new RLBasicTask(marioAIOptions);
-	    final Logger logger = new Logger(agent);
+	    final Logger logger = new Logger();
 	    
 	    int seed = 0;
 	    int difficulty;
@@ -50,8 +50,8 @@ public class Simulator2 {
             System.out.println(basicTask.getEnvironment().getEvaluationInfoAsString());
             
             // Log the current model results every 100 iterations.
-            if(i % 100 == 0){
-            	//testModel(marioAIOptions, basicTask, (RLAgent2)agent.clone(), logger);            	
+            if(i % 100 == 0){            	
+            	testModel(marioAIOptions, basicTask, agent, logger);   
             }
             
             
@@ -81,13 +81,23 @@ public class Simulator2 {
 		int seed = 0;
 	    int difficulty;
 	    Random rand = new Random();
+	    
+	    // This is ugly, but creating a clone of agent was a mess.
+	    double backupAlpha = agent.alpha;
+	    double backupAlphaMin = agent.alpha_min;
+	    double backupAlphaDecay = agent.alpha_decay;
+	    double backupEpsilon = agent.epsilon;
+	    double backupEpsilonMin = agent.epsilon_min;
+	    double backupEpsilonDecay = agent.epsilon_decay;
 	
+	    // Prevent learning and pick greedy policy.
 		agent.alpha = 0;
     	agent.alpha_min = 0;
     	agent.alpha_decay = 0;
     	agent.epsilon = 0;
     	agent.epsilon_min = 0;
     	agent.epsilon_decay = 0;
+    	
     	for (int i = 0; i < 100; ++i)
  	    {	
  	    	 difficulty = rand.nextInt(1);        	        
@@ -101,7 +111,15 @@ public class Simulator2 {
              // and performs an action.
              basicTask.runSingleEpisode(1);
              Environment environment = basicTask.getEnvironment();
-             logger.log();
+             logger.log(environment);
  	    }
+    	
+    	// Restore the parameters.
+    	agent.alpha = backupAlpha;
+    	agent.alpha_min = backupAlphaMin;
+    	agent.alpha_decay = backupAlphaDecay;
+    	agent.epsilon = backupEpsilon;
+    	agent.epsilon_min = backupEpsilonMin;
+    	agent.epsilon_decay = backupEpsilonDecay;
 	}
 }

@@ -212,10 +212,5 @@ public class RLAgent2 extends BasicMarioAIAgent implements Agent{
 	public boolean[] getAction(int action_num){
 		return all_actions[action_num].clone();
 	}	
-	
-	@Override
-    protected Object clone() throws CloneNotSupportedException {
-        return super.clone();
-    }
 }
 

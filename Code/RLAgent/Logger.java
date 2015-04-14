@@ -1,13 +1,15 @@
 package RLAgent;
 
+import ch.idsia.benchmark.mario.environments.Environment;
+
 public class Logger {
 	
-	RLAgent2 agent;
 	
-	public Logger(RLAgent2 agent){
-		this.agent = agent;
+	public Logger(){
+		;
 	}
 	
-	public void log(){
+	public void log(Environment environment){
+		;
 	}
 }
