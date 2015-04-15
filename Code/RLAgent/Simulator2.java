@@ -31,10 +31,10 @@ public class Simulator2 {
 	    int seed = 0;
 	    int difficulty;
 	    
-	    for (int i = 0; i < ITERATIONS; ++i)
+	    for (int i = 0; i <= ITERATIONS; ++i)
 	    {	
 	    	difficulty = rand.nextInt(1);        	        
-	        
+
             marioAIOptions.setLevelDifficulty(difficulty);
             marioAIOptions.setLevelRandSeed(seed++);
             marioAIOptions.setAgent(agent);
@@ -49,8 +49,8 @@ public class Simulator2 {
             System.out.println(basicTask.getEnvironment().getEvaluationInfoAsString());
             
             // Log the current model results every 100 iterations.
-            if(i % 100 == 0){            	
-            	testModel(marioAIOptions, basicTask, agent, i);   
+            if(i % 100 == 0 && i != 0){            	
+            	//testModel(marioAIOptions, basicTask, agent, i);   
             }
             
             
@@ -78,29 +78,24 @@ public class Simulator2 {
 	
 	static void testModel(MarioAIOptions marioAIOptions, RLBasicTask basicTask, RLAgent2 agent, int currentIter){	 
 	    
-		int seed = 0;
 	    int difficulty;
 	    int numberTestIters = 100;
 	    Random rand = new Random();
+		int seed = rand.nextInt();
 	    
 	    final Logger logger = new Logger(currentIter);
 	    
 	    // This is ugly, but creating a clone of agent was a mess.
-	    double backupAlpha = agent.alpha;
-	    double backupAlphaMin = agent.alpha_min;
-	    double backupAlphaDecay = agent.alpha_decay;
-	    double backupEpsilon = agent.epsilon;
+	    double backupNumMoves = agent.num_moves;
 	    double backupEpsilonMin = agent.epsilon_min;
-	    double backupEpsilonDecay = agent.epsilon_decay;
 	
 	    // Prevent learning and pick greedy policy.
-		agent.alpha = 0;
-    	agent.alpha_min = 0;
-    	agent.alpha_decay = 0;
-    	agent.epsilon = 0;
-    	agent.epsilon_min = 0;
-    	agent.epsilon_decay = 0;
+	    agent.num_moves = agent.linear_ep;
+    	agent.epsilon_min = 0;    	
+    	agent.testRun = true;
     	
+    	System.out.println("Testing. Please wait...");
+
     	for (int i = 0; i < numberTestIters; ++i)
  	    {	
  	    	 difficulty = rand.nextInt(1);        	        
@@ -113,18 +108,17 @@ public class Simulator2 {
              // Run the stage. This is where the agent gets the state
              // and performs an action.
              basicTask.runSingleEpisode(1);
+             
              Environment environment = basicTask.getEnvironment();
-             logger.log(environment);
+             logger.log(environment);    
+    
  	    }
     	
     	logger.writeToFile();
     	
     	// Restore the parameters.
-    	agent.alpha = backupAlpha;
-    	agent.alpha_min = backupAlphaMin;
-    	agent.alpha_decay = backupAlphaDecay;
-    	agent.epsilon = backupEpsilon;
-    	agent.epsilon_min = backupEpsilonMin;
-    	agent.epsilon_decay = backupEpsilonDecay;
+    	agent.num_moves = backupNumMoves;
+    	agent.epsilon_min = backupEpsilonMin; 
+    	agent.testRun = false;
 	}
 }
