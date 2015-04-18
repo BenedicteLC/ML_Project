@@ -33,9 +33,9 @@ public class State {
 	public State() {
 		this.groundMonsters = new int[11*11];
 		this.flyingMonsters = new int[11*11];
-		this.plantMonsters = new int[7*7]; 
+		this.plantMonsters = new int[5*5]; 
 		this.obstacles = new int[11*11];
-		this.stateArray = new int[5 + this.groundMonsters.length + this.flyingMonsters.length
+		this.stateArray = new int[4 + this.groundMonsters.length + this.flyingMonsters.length
 		                          + this.plantMonsters.length + this.obstacles.length];
 		this.totalKillsByFire = 0;
 		this.totalKillsByStomp = 0;
@@ -176,7 +176,7 @@ public class State {
 		// Get Mario's mode (small/big, fire).
 		// Mario can be both big and fire at the same time.
 		int marioMode = environment.getMarioMode();
-		this.isMarioBig = marioMode == 1 ? 1 : 0;
+		this.isMarioBig = marioMode == 0 ? 0 : 1;
 		this.isMarioFire = marioMode == 2 ? 1 : 0;		
 		
 		// 1 if Mario is grounded, 0 otherwise.
@@ -190,8 +190,8 @@ public class State {
 
 		int currentTile = 0;
 		// Ground monsters.
-		for(int i = 5; i < scene.length - 5; i++){
-			for (int j = 5; j < scene[0].length-5; j++){
+		for(int i = POS_Y - 5; i <= POS_Y + 5; i++){
+			for (int j = POS_X - 5; j <= POS_X + 5; j++){
 				// For now we're not discriminating between monster types
 				// to reduce the state space.
 				if(this.containsMonster(scene[i][j])){
@@ -206,8 +206,8 @@ public class State {
 				
 		currentTile = 0;
 		// Flying monsters array.
-		for(int i = 5; i < scene.length - 5; i++){
-			for (int j = 5; j < scene[0].length-5; j++){
+		for(int i = POS_Y - 5; i <= POS_Y + 5; i++){
+			for (int j = POS_X - 5; j <= POS_X + 5; j++){
 				// For now we're not discriminating between monster types
 				// to reduce the state space.
 				if(this.containsFlyingMonster(scene[i][j])){
@@ -223,8 +223,8 @@ public class State {
 		currentTile = 0;
 
 		// Plant monsters array.
-		for(int i = POS_Y - 3; i <= POS_Y + 3; i++){
-			for (int j = POS_X - 3; j <= POS_X + 3; j++){
+		for(int i = POS_Y - 2; i <= POS_Y + 2; i++){
+			for (int j = POS_X - 2; j <= POS_X + 2; j++){
 				// For now we're not discriminating between monster types
 				// to reduce the state space. Piranha plants will get us killed by stomp!
 				if(scene[i][j] == Sprite.KIND_ENEMY_FLOWER){
@@ -239,8 +239,8 @@ public class State {
 		
 		// Fill the obstacle array.
 		currentTile = 0;		
-		for(int i = POS_Y - 5; i <= POS_Y + 5; i++){
-			for (int j = POS_X - 5; j <= POS_X + 5; j++){
+		for(int i = POS_Y - 4; i <= POS_Y + 4; i++){
+			for (int j = POS_X - 4; j <= POS_X + 4; j++){
 				if(this.containsObstacle(scene[i][j], j, i)){
 					this.obstacles[currentTile] = 1;
 				}

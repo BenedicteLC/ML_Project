@@ -18,10 +18,9 @@ public class Simulator2 {
 	
 	public static void main(String[] args) throws CloneNotSupportedException
 	{		
-		final int ITERATIONS = 1500;
+		final int ITERATIONS = 15000;
 		int winCount = 0;
 		int gameCount = 0;
-		Random rand = new Random();
 		
 		//final String argsString = "-vis off"; // -vis: show display
 	    final MarioAIOptions marioAIOptions = new MarioAIOptions(args);
@@ -29,14 +28,16 @@ public class Simulator2 {
 	    final RLBasicTask basicTask = new RLBasicTask(marioAIOptions);
 	    
 	    int seed = 0;
-	    int difficulty;
+	    int difficulty, marioInitialMode;
 	    
-	    for (int i = 0; i <= ITERATIONS; ++i)
+	    for (int i = 0; i < ITERATIONS; ++i)
 	    {	
-	    	difficulty = rand.nextInt(1);        	        
-
+	    	difficulty = randInt(0,0);       	
+	    	marioInitialMode = randInt(0,2); // Init Mario in small, big or fire mode.
+	        
             marioAIOptions.setLevelDifficulty(difficulty);
             marioAIOptions.setLevelRandSeed(seed++);
+            marioAIOptions.setMarioMode(marioInitialMode);
             marioAIOptions.setAgent(agent);
             basicTask.setOptionsAndReset(marioAIOptions);
             
@@ -49,10 +50,10 @@ public class Simulator2 {
             System.out.println(basicTask.getEnvironment().getEvaluationInfoAsString());
             
             // Log the current model results every 100 iterations.
-            if(i % 100 == 0 && i != 0){            	
-            	//testModel(marioAIOptions, basicTask, agent, i);   
-            }
-            
+            // Also log the results every 10 iterations at the beginning.
+            if(((i < 100 && i % 20 == 0) || i % 250 == 0) && i != 0){            	
+            	testModel(marioAIOptions, basicTask, agent, i);   
+            }            
             
             // Count wins in the last 1000 iters.
             if(ITERATIONS - i <= 1000){ 
@@ -76,22 +77,15 @@ public class Simulator2 {
 
 	}	
 	
-	static void testModel(MarioAIOptions marioAIOptions, RLBasicTask basicTask, RLAgent2 agent, int currentIter){	 
+static void testModel(MarioAIOptions marioAIOptions, RLBasicTask basicTask, RLAgent2 agent, int currentIter){	 
 	    
 	    int difficulty;
 	    int numberTestIters = 100;
 	    Random rand = new Random();
 		int seed = rand.nextInt();
 	    
-	    final Logger logger = new Logger(currentIter);
-	    
-	    // This is ugly, but creating a clone of agent was a mess.
-	    double backupNumMoves = agent.num_moves;
-	    double backupEpsilonMin = agent.epsilon_min;
-	
+	    final Logger logger = new Logger(currentIter);	
 	    // Prevent learning and pick greedy policy.
-	    agent.num_moves = agent.linear_ep;
-    	agent.epsilon_min = 0;    	
     	agent.testRun = true;
     	
     	System.out.println("Testing. Please wait...");
@@ -102,6 +96,7 @@ public class Simulator2 {
  	        
              marioAIOptions.setLevelDifficulty(difficulty);
              marioAIOptions.setLevelRandSeed(seed++);
+             marioAIOptions.setMarioMode(2); //Fire
              marioAIOptions.setAgent(agent);
              basicTask.setOptionsAndReset(marioAIOptions);
              
@@ -116,9 +111,20 @@ public class Simulator2 {
     	
     	logger.writeToFile();
     	
-    	// Restore the parameters.
-    	agent.num_moves = backupNumMoves;
-    	agent.epsilon_min = backupEpsilonMin; 
+    	// Allow back training.
     	agent.testRun = false;
+	}
+
+	public static int randInt(int min, int max) {
+	
+	    // NOTE: Usually this should be a field rather than a method
+	    // variable so that it is not re-seeded every call.
+	    Random rand = new Random();
+	
+	    // nextInt is normally exclusive of the top value,
+	    // so add 1 to make it inclusive
+	    int randomNum = rand.nextInt((max - min) + 1) + min;
+	
+	    return randomNum;
 	}
 }

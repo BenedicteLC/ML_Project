@@ -65,7 +65,7 @@ public class LinearReg {
 	public void add_elig(double[] inputs, int action_num){
 		for (int j=0; j<weights.length; j++){
 			if (inputs[j] > 0)
-				elig[j][action_num] = inputs[j];
+				elig[j][action_num] = inputs[j]; // Replacing traces.
 		}
 	}
 
@@ -164,7 +164,7 @@ public class LinearReg {
 				s1 += weights[i][j];
 			}
 		}
-		//System.out.println(s1);
+		System.out.println(s1);
 	}
 	
 	public void print_biases(){
